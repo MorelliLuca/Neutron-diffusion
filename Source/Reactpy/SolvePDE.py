@@ -113,9 +113,10 @@ class Grid:
         vector = np.empty(np.prod(self.size))
         for cell in self.cells_list:
             if cell.type != "Empty":
-                vector[cell.position[0] + cell.position[1] * self.size[1]] = cell.flux  
+                vector[cell.position[0] + cell.position[1] * self.size[1]] = cell.flux
             else :
                 assert(cell.flux == 0)
+                vector[cell.position[0] + cell.position[1] * self.size[1]] = cell.flux
         return vector
     
     def flux_matrix(self) -> np.ndarray:
@@ -137,6 +138,7 @@ class Grid:
                 matrix[cell.position[1], cell.position[0]] = cell.flux
             else :
                 assert(cell.flux == 0)
+                matrix[cell.position[1], cell.position[0]] = cell.flux
         return matrix
     def flux_PDE_matrix(self)-> np.ndarray:
         """Returns a matrix representing a linear flux term in the PDE.
@@ -157,7 +159,8 @@ class Grid:
             if cell.type == "Flux":
                 matrix[column_index, row_index] = 1
             else: 
-                matrix[column_index, row_index] = 0
+                assert(cell.flux == 0)
+                matrix[cell.position[1], cell.position[0]] = cell.flux
         return matrix
 
     def first_Xderivative_matrix(self) -> np.ndarray:
@@ -181,10 +184,10 @@ class Grid:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
                 column_index = column.position[0] + column.position[1] * self.size[1]
-                if column.type == "Flux":
+                if column.type == "Flux" and row.type == "Flux":
                     if column.position == tuple(np.subtract(row.position, (1, 0))):
                         matrix[column_index, row_index] = -1/(2*self.Delta)
-                    elif column.position == tuple(np.add(row.position, (1, 0))) :
+                    elif column.position == tuple(np.add(row.position, (1, 0))):
                         matrix[column_index, row_index] = 1/(2*self.Delta)
                     else:
                         matrix[column_index, row_index] = 0
@@ -213,7 +216,7 @@ class Grid:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
                 column_index = column.position[0] + column.position[1] * self.size[1]
-                if column.type == "Flux":
+                if column.type == "Flux" and row.type == "Flux":
                     if column.position == tuple(np.subtract(row.position, (0, 1))):
                         matrix[column_index, row_index] = -1/(2*self.Delta)
                     elif column.position == tuple(np.add(row.position, (0, 1))) :
@@ -245,7 +248,7 @@ class Grid:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
                 column_index = column.position[0] + column.position[1] * self.size[1]
-                if column.type == "Flux":
+                if column.type == "Flux" and row.type == "Flux":
                     if column.position == tuple(np.subtract(row.position, (1, 0))):
                         matrix[column_index, row_index] = 1/(self.Delta*self.Delta)
                     elif column.position == tuple(np.add(row.position, (1, 0))) :
@@ -279,7 +282,7 @@ class Grid:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
                 column_index = column.position[0] + column.position[1] * self.size[1]
-                if column.type == "Flux":
+                if column.type == "Flux" and row.type == "Flux":
                     if column.position == tuple(np.subtract(row.position, (0, 1))):
                         matrix[column_index, row_index] = 1/(self.Delta*self.Delta)
                     elif column.position == tuple(np.add(row.position, (0, 1))) :
@@ -375,10 +378,10 @@ class Solver:
         while True:
             old_phi = phi.copy()
             tmp_phi = L_inv.dot(U.dot(phi)) + L_inv.dot(sources_matrix)
-            phi = omega * tmp_phi + (1 - omega) * old_phi
             #Sets empty cell flux to zero
             for cell_coord in self.grid.empty_cells:
-                phi[cell_coord[0] + cell_coord[1] * self.grid.size[1]] = 0
+                tmp_phi[cell_coord[0] + cell_coord[1] * self.grid.size[1]] = 0
+            phi = omega * tmp_phi + (1 - omega) * old_phi
             # Convergence criterion
             if np.linalg.norm(tmp_phi - old_phi) < conv_criterion:
                 break
