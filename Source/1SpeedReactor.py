@@ -7,20 +7,46 @@ from tqdm import tqdm
 #------Code-----
 
 #-----Parameters------ 
-t_max: float = 1         
+t_max: float = 10         
 delta_t = 0.1               
 omega = 1               
 conv_criterion = 1E-5
 D = 1
 v = 1
-fudge = 0.0062366553170837465
+fudge = 1
+Delta = 1
+
+input_file = open("Parameters.dat", "r")
+for line in input_file:
+    line = line.replace("\n", "")
+    line = line.replace(" ", "")
+    parameter = line.split("=")
+    if parameter[0]  == "t_max":
+        t_max = float(parameter[1])
+    elif parameter[0]  == "delta_t":
+        delta_t = float(parameter[1])
+    elif parameter[0]  == "omega":
+        omega = float(parameter[1])
+    elif parameter[0]  == "conv_criterion":
+        conv_criterion = float(parameter[1])
+    elif parameter[0]  == "D":
+        D = float(parameter[1])
+    elif parameter[0]  == "v":
+        v = float(parameter[1])
+    elif parameter[0]  == "fudge":
+        fudge = float(parameter[1])
+    elif parameter[0]  == "Delta":
+        Delta = float(parameter[1])
+    else:
+        print("Unknow parameter inserted " + parameter[0] +".\n Its value will be ignored: please check for spelling errors.")
+
 
 #Spacial depending paramenters aquired from files
 Sigma_absorption = np.diag(rt.file_read_as_vector("Sigma_absorption.dat"))
 Sigma_fuel = np.diag(rt.file_read_as_vector("Sigma_fuel.dat"))
 
 #Creates enviroment for numerical integration 
-reactor = rt.Grid(grid_matrix=rt.file_read_as_matrix("grid.dat"), Delta=0.02)
+reactor = rt.Grid(grid_matrix=rt.file_read_as_matrix("grid.dat"), Delta = Delta)
 
 #Generates the matrices that represents the discretized differential operators
 PDE = -D * (reactor.second_Xderivative_matrix() + reactor.second_Yderivative_matrix()) + Sigma_absorption  - v * Sigma_fuel / fudge
@@ -52,6 +78,21 @@ def update(frame):
    ax.set_title('Time(s):' + str(np.round(frame * delta_t, 3)))
    cbar.update_normal(pcm)
    return [pcm, cbar]
+
+fig.subplots_adjust(top=0.9)
+
+description =(
+    r"$D=$"+str(D)+r"   $v=$"+str(v)+r"   $k_{fudge}=$"+str(fudge)+ "\n" +
+    r"$\Delta=$"+str(Delta)+r"      $\Delta t=$"+str(delta_t) +
+    r"$\omega=$" +str(omega)+r"     conv. crit.$=$" +str(conv_criterion)
+)
+fig.text(0.6,
+        0.92,
+        description,
+        fontsize=7,
+        bbox=dict(facecolor="white", edgecolor="black", pad=3.0),
+    )
+
 ani = FuncAnimation(fig, update, frames=len(data), interval= .3 / delta_t)
 ani.save('filename.gif', writer='imagemagick')
 

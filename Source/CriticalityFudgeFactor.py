@@ -12,13 +12,38 @@ conv_criterion = 1E-5
 D = 1
 v = 1
 fudge = 1
+Delta = 1
+
+input_file = open("Parameters.dat", "r")
+for line in input_file:
+    line = line.replace("\n", "")
+    line = line.replace(" ", "")
+    parameter = line.split("=")
+    if parameter[0]  == "t_max":
+        continue
+    elif parameter[0]  == "delta_t":
+        continue
+    elif parameter[0]  == "omega":
+        omega = float(parameter[1])
+    elif parameter[0]  == "conv_criterion":
+        conv_criterion = float(parameter[1])
+    elif parameter[0]  == "D":
+        D = float(parameter[1])
+    elif parameter[0]  == "v":
+        v = float(parameter[1])
+    elif parameter[0]  == "fudge":
+        fudge = float(parameter[1])
+    elif parameter[0]  == "Delta":
+        Delta = float(parameter[1])
+    else:
+        print("Unknow parameter inserted " + parameter[0] +".\n Its value will be ignored: please check for spelling errors.")
 
 #Spacial depending paramenters aquired from files
 Sigma_absorption = np.diag(rt.file_read_as_vector("Sigma_absorption.dat"))
 Sigma_fuel = np.diag(rt.file_read_as_vector("Sigma_fuel.dat"))
 
 #Creates enviroment for numerical integration 
-reactor = rt.Grid(rt.file_read_as_matrix("grid.dat"), Delta=0.02) #change to reactor
+reactor = rt.Grid(rt.file_read_as_matrix("grid.dat"), Delta=Delta) #change to reactor
 
 #Generates the matrices that represents the discretized differential operators
 PDE = -D * (reactor.second_Xderivative_matrix() + reactor.second_Yderivative_matrix()) + Sigma_absorption 
@@ -46,6 +71,20 @@ fig, ax = plt.subplots()
 ax.set_title('Stationary critical solution')
 pcm = ax.pcolormesh(solver.grid.flux_matrix(), cmap='turbo', shading='flat')
 cbar = plt.colorbar(pcm, ax=ax)
+
+fig.subplots_adjust(top=0.9)
+
+description =(
+    r"$D=$"+str(D)+r"   $v=$"+str(v)+ r"   $\omega=$" +str(omega)+r"   conv. crit.$=$" +str(conv_criterion)+"\n" +
+    r"$\Delta=$"+str(Delta) +r"   $k_{fudge}=$"+str(fudge)
+   
+)
+fig.text(0.62,
+        0.94,
+        description,
+        fontsize=7.5,
+        bbox=dict(facecolor="white", edgecolor="black", pad=3.0),
+    )
 
 plt.draw()
 plt.show()
