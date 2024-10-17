@@ -23,7 +23,7 @@ def vector_to_matrix(vector: np.ndarray, size: tuple) -> np.ndarray:
         Matricial representation of the data contained into `vector`.
 
     """
-    matrix = np.empty(size)
+    matrix = np.empty(size, dtype='float64')
     for i in range(size[0]):
         for j in range(size[1]):
             matrix[i, j] = vector[i + size[1] * j]
@@ -49,7 +49,7 @@ def matrix_to_vector(matrix: np.ndarray) -> np.ndarray:
 
     """
     size = matrix.shape
-    vector = np.empty(np.prod(size))
+    vector = np.empty(np.prod(size), dtype='float64')
     for i in range(size[0]):
         for j in range(size[1]):
             vector[i + size[1] * j] = matrix[i, j]

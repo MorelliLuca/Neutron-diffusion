@@ -127,7 +127,7 @@ class Grid:
         -----
         This vector representation is used by `Solver.solve()` for numerically integration.
         """
-        vector = np.empty(np.prod(self.size))
+        vector = np.empty(np.prod(self.size), dtype='float64')
         for cell in self.cells_list:
             if cell.type != "Empty":
                 vector[cell.position[0] + cell.position[1] * self.size[1]] = cell.flux
@@ -149,7 +149,7 @@ class Grid:
         -----
         This matrix is usually fed to matplotlib to get a graphical representation of the reactor.
         """
-        matrix = np.empty(self.size)
+        matrix = np.empty(self.size, dtype='float64')
         for cell in self.cells_list:
             if cell.type != "Empty":
                 matrix[cell.position[1], cell.position[0]] = cell.flux
@@ -170,7 +170,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method:
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)))
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
         for cell in self.cells_list:
             row_index = cell.position[0] + cell.position[1] * self.size[1]
             column_index = row_index
@@ -197,7 +197,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method:
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)))
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
         for row in self.cells_list:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
@@ -229,7 +229,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method:
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)))
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
         for row in self.cells_list:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
@@ -261,7 +261,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method.
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)))
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
         for row in self.cells_list:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
@@ -295,7 +295,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method.
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)))
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
         for row in self.cells_list:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
@@ -359,7 +359,6 @@ class Solver:
         self.PDE_matrix = PDE_matrix
         self.sources = sources
     
-    @jit
     def solve(self, omega: float, conv_criterion: float, update: bool = False) -> Grid:
         r"""Approximates the stationary flux solution.
 
