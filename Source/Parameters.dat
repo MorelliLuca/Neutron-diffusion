@@ -1,8 +1,8 @@
-t_max = 10         
+t_max = 15         
 delta_t = 0.1               
 omega = 1               
 conv_criterion = 1E-5
-D = 1
+D = 10
 v = 1
-fudge = 0.5341226485428648
+fudge = 0.0821733609727076
 Delta = 0.2

@@ -1,8 +1,9 @@
 import numpy as np
 
-#---- Useful Functions -----
+# ---- Useful Functions -----
 
-def vector_to_matrix(vector : np.ndarray, size: tuple) -> np.ndarray:
+
+def vector_to_matrix(vector: np.ndarray, size: tuple) -> np.ndarray:
     """
     Converts a vector into matrix of specified size.
 
@@ -18,18 +19,18 @@ def vector_to_matrix(vector : np.ndarray, size: tuple) -> np.ndarray:
 
     Returns
     -------
-    np.ndarray 
+    np.ndarray
         Matricial representation of the data contained into `vector`.
 
     """
     matrix = np.empty(size)
     for i in range(size[0]):
         for j in range(size[1]):
-            matrix[i,j] = vector[i + size[1] * j]
+            matrix[i, j] = vector[i + size[1] * j]
     return matrix
 
 
-def matrix_to_vector(matrix : np.ndarray) -> np.ndarray:
+def matrix_to_vector(matrix: np.ndarray) -> np.ndarray:
     """
     Converts a matrix of specified size into a vector.
 
@@ -43,7 +44,7 @@ def matrix_to_vector(matrix : np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    np.ndarray 
+    np.ndarray
         Vectorial representation of the data contained into `matrix`.
 
     """
@@ -55,7 +56,7 @@ def matrix_to_vector(matrix : np.ndarray) -> np.ndarray:
     return vector
 
 
-def file_read_as_matrix(filename: str) -> list :
+def file_read_as_matrix(filename: str) -> list:
     """Reads from file a matrix and returns a 2-D list containing its entries.
 
     The matrix can contain both letters and numbers (interger, float).
@@ -83,7 +84,8 @@ def file_read_as_matrix(filename: str) -> list :
         matrix.append(row)
     return matrix
 
-def file_read_as_vector(filename: str) -> list :
+
+def file_read_as_vector(filename: str) -> list:
     """Reads from file a vector and returns a 1-D list containing its entries.
 
     The vector can contain both letters and numbers (interger, float).

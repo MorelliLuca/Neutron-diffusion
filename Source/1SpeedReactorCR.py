@@ -48,6 +48,7 @@ for line in input_file:
 # Spacial depending paramenters aquired from files
 Sigma_absorption = np.diag(rt.file_read_as_vector("Sigma_absorption.dat"))
 Sigma_fuel = np.diag(rt.file_read_as_vector("Sigma_fuel.dat"))
+Control_rods = np.diag(rt.file_read_as_vector("Control_rods.dat"))
 
 # Creates enviroment for numerical integration
 reactor = rt.Grid(grid_matrix=rt.file_read_as_matrix("grid.dat"), Delta=Delta)
@@ -63,14 +64,21 @@ time_PDE_Matrix = PDE + reactor.flux_PDE_matrix() / (v * delta_t)
 data = [reactor.flux_matrix()]  # Set of neutron fluxes at different time
 
 # Initalizes the numerical integrataor
-solver = rt.Solver(reactor, sources=data[0] / (v * delta_t), PDE_matrix=time_PDE_Matrix)
+solver = rt.Solver(
+    reactor, sources=data[0] / (v * delta_t), PDE_matrix=time_PDE_Matrix + Control_rods
+)
 
 # ---Numerical integration---
 for t in tqdm(range(int(t_max / delta_t))):
     solver.solve(omega, conv_criterion, update=True)
     data.append(solver.grid.flux_matrix())
     # The solver sources are updated with the new fluxes to obtain time derivative terms
-    solver.sources = solver.grid.flux_matrix() / (v * delta_t)
+    solver = rt.Solver(
+        reactor,
+        sources=solver.grid.flux_matrix() / (v * delta_t),
+        PDE_matrix=time_PDE_Matrix
+        + Control_rods * (2 + np.tanh(t * delta_t - 8) + np.tanh(-t * delta_t + 2)) / 2,
+    )
 
 # -----Plotting and image genetation-----
 data.pop(0)  # Removes the initial condition from the plotte data
@@ -105,7 +113,7 @@ description = (
     + str(Delta)
     + r"      $\Delta t=$"
     + str(delta_t)
-    + r" $\omega=$"
+    + r"$\omega=$"
     + str(omega)
     + r"     conv. crit.$=$"
     + str(conv_criterion)
@@ -119,7 +127,7 @@ fig.text(
 )
 
 ani = FuncAnimation(fig, update, frames=len(data), interval=0.3 / delta_t)
-ani.save("filename.gif", writer="imagemagick")
+# ani.save('filename.gif', writer='imagemagick')
 
 plt.draw()
 plt.show()
