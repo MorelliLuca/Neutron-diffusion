@@ -1,5 +1,6 @@
 import numpy as np
 from copy import deepcopy
+from numba import jit
 from .Functions import *
 
 # ---- Classes -----
@@ -357,7 +358,8 @@ class Solver:
         self.grid = grid
         self.PDE_matrix = PDE_matrix
         self.sources = sources
-
+    
+    @jit
     def solve(self, omega: float, conv_criterion: float, update: bool = False) -> Grid:
         r"""Approximates the stationary flux solution.
 

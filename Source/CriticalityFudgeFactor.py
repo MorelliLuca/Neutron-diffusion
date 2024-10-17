@@ -45,6 +45,7 @@ for line in input_file:
 # Spacial depending paramenters aquired from files
 Sigma_absorption = np.diag(rt.file_read_as_vector("Sigma_absorption.dat"))
 Sigma_fuel = np.diag(rt.file_read_as_vector("Sigma_fuel.dat"))
+Control_rods = np.diag(rt.file_read_as_vector("Control_rods.dat"))
 
 # Creates enviroment for numerical integration
 reactor = rt.Grid(rt.file_read_as_matrix("grid.dat"), Delta=Delta)  # change to reactor
@@ -52,7 +53,7 @@ reactor = rt.Grid(rt.file_read_as_matrix("grid.dat"), Delta=Delta)  # change to 
 # Generates the matrices that represents the discretized differential operators
 PDE = (
     -D * (reactor.second_Xderivative_matrix() + reactor.second_Yderivative_matrix())
-    + Sigma_absorption
+    + Sigma_absorption + Control_rods * .20
 )
 # Initalizes the numerical integrataor
 solver = rt.Solver(

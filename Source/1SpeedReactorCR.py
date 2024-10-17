@@ -6,6 +6,19 @@ from tqdm import tqdm
 
 # ------Code-----
 
+def time_CR(t: float, delta_t: float, t_max :float, k: float)->float:
+    if t*delta_t < t_max * 0.1:
+        percentage = -10*t/t_max*delta_t +1
+    elif t*delta_t < t_max * 0.2:
+        percentage = 0
+    elif t*delta_t < t_max * 0.3:
+        percentage = (t/t_max*delta_t - 0.2)*k*10
+    elif t*delta_t < t_max * 0.8:
+        percentage = k
+    else:
+        percentage = (1-k)*5*(t/t_max*delta_t - 0.8) + k
+    return percentage
+
 # -----Parameters------
 t_max: float = 10
 delta_t = 0.1
@@ -77,7 +90,7 @@ for t in tqdm(range(int(t_max / delta_t))):
         reactor,
         sources=solver.grid.flux_matrix() / (v * delta_t),
         PDE_matrix=time_PDE_Matrix
-        + Control_rods * (2 + np.tanh(t * delta_t - 8) + np.tanh(-t * delta_t + 2)) / 2,
+        + Control_rods * time_CR(t,delta_t, t_max, 0.2),
     )
 
 # -----Plotting and image genetation-----
