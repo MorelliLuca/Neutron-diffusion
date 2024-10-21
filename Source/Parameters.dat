@@ -4,5 +4,5 @@ omega = 1
 conv_criterion = 1E-5
 D = 10
 v = 1
-fudge = 0.045210616027732034
+fudge = 0.044697228275112834
 Delta = 0.2

@@ -1,7 +1,16 @@
+"""This module provvides a set of classes that can be utilized to perform numerical integration of stationary PDEs.
+   
+These classes create a discretized configuartion space for the PDE, then using succesive relaxation method, they estimate the 
+stationary solution to the given PDE.
+
+The class `Cell` represent the single spacial element of the discretization, containing its numerical proprieties such as the position,
+then the `Grid` class groups toghether all the `Cell` istances and gives to the user the methods needed to represent the discretized PDE.
+Lastly, the class `Solver` manages the integration of the PDE.
+"""
 import numpy as np
 from copy import deepcopy
-from numba import jit
 from .Functions import *
+from .IntegrationsMethods import *
 
 # ---- Classes -----
 
@@ -44,11 +53,11 @@ class Grid:
     ----------
     `Delta` : float
         The discretization step: size of each cell (all equal size).
-    `size` : tuple
+    `size` : np.ndarray
         The maximum number of cells in the grid: (max_x_size, ,max_y_size).
-    `cells_list` : list
+    `cells_list` : np.ndarray
         The list of cells of the grid.
-    `empty_cells` : list
+    `empty_cells` : np.ndarray
         The list of  the coordinates of cells of type `Empty` in the grid.
 
     Methods
@@ -86,16 +95,16 @@ class Grid:
         for row in grid_matrix:
             if row_size != len(row):
                 raise Exception("Grid matrix is not uniform.")
-        self.size = (row_size, column_size)
-        self.cells_list = []
-        self.empty_cells = []
+        self.size = np.array((row_size, column_size), dtype=np.int64)
+        tmp_cells_list = []
+        tmp_empty_cells = []
         # Gives type and flux to each cell from grid_matrix values
         for row_index in range(self.size[1]):
             for column_index in range(self.size[0]):
                 if isinstance(
                     grid_matrix[row_index][column_index], float
                 ) or isinstance(grid_matrix[row_index][column_index], int):
-                    self.cells_list.append(
+                    tmp_cells_list.append(
                         Cell(
                             grid_matrix[row_index][column_index],
                             (row_index, column_index),
@@ -103,8 +112,8 @@ class Grid:
                         )
                     )
                 elif grid_matrix[row_index][column_index] == "E":
-                    self.cells_list.append(Cell(0, (row_index, column_index), "Empty"))
-                    self.empty_cells.append((row_index, column_index))
+                    tmp_cells_list.append(Cell(0, (row_index, column_index), "Empty"))
+                    tmp_empty_cells.append((row_index, column_index))
                 else:
                     raise ValueError(
                         "Cell ("
@@ -113,6 +122,11 @@ class Grid:
                         + str(column_index)
                         + ") type not valid"
                     )
+                self.cells_list = np.array(tmp_cells_list)
+                if len(tmp_empty_cells) == 0:
+                    self.empty_cells = np.array([(-1, -1)], dtype=np.int64)
+                else:
+                    self.empty_cells = np.array(tmp_empty_cells, dtype=np.int64)
 
     def flux_vector(self) -> np.ndarray:
         """Returns a vector containing the fluxes of all the cells:
@@ -127,7 +141,7 @@ class Grid:
         -----
         This vector representation is used by `Solver.solve()` for numerically integration.
         """
-        vector = np.empty(np.prod(self.size), dtype='float64')
+        vector = np.empty(np.prod(self.size), dtype=np.float64)
         for cell in self.cells_list:
             if cell.type != "Empty":
                 vector[cell.position[0] + cell.position[1] * self.size[1]] = cell.flux
@@ -149,7 +163,7 @@ class Grid:
         -----
         This matrix is usually fed to matplotlib to get a graphical representation of the reactor.
         """
-        matrix = np.empty(self.size, dtype='float64')
+        matrix = np.empty(self.size, dtype=np.float64)
         for cell in self.cells_list:
             if cell.type != "Empty":
                 matrix[cell.position[1], cell.position[0]] = cell.flux
@@ -170,7 +184,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method:
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype=np.float64)
         for cell in self.cells_list:
             row_index = cell.position[0] + cell.position[1] * self.size[1]
             column_index = row_index
@@ -197,7 +211,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method:
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype=np.float64)
         for row in self.cells_list:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
@@ -229,7 +243,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method:
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype=np.float64)
         for row in self.cells_list:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
@@ -261,7 +275,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method.
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype=np.float64)
         for row in self.cells_list:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
@@ -295,7 +309,7 @@ class Grid:
         -----
         `Solver` : The attribute `Solver.PDE_matrix` can be created usign this method.
         """
-        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype='float64')
+        matrix = np.empty((np.prod(self.size), np.prod(self.size)), dtype=np.float64)
         for row in self.cells_list:
             row_index = row.position[0] + row.position[1] * self.size[1]
             for column in self.cells_list:
@@ -344,13 +358,13 @@ class Solver:
         `PDE_matrix` : np.array
             2D array that represents the discretized stationary PDE to be solved.
         `sources` : np.array
-            2D array that contains the source terms of the PDE: these are arranged 
+            2D array that contains the source terms of the PDE: these are arranged
             in the array following the
             geometry of the reactor.
 
         See also
         --------
-        `Grid.first_Xderivative_matrix()`, `Grid.first_Yderivative_matrix()`, 
+        `Grid.first_Xderivative_matrix()`, `Grid.first_Yderivative_matrix()`,
         `Grid.second_Xderivative_matrix()`
         and `Grid.second_Yderivative_matrix()`:
             These methods can generate the matrices that made up the matrix `PDE_matrix`
@@ -358,30 +372,44 @@ class Solver:
         self.grid = grid
         self.PDE_matrix = PDE_matrix
         self.sources = sources
-    
-    def solve(self, omega: float, conv_criterion: float, update: bool = False) -> Grid:
+
+    def solve(
+        self,
+        omega: float,
+        conv_criterion: float,
+        update: bool = False,
+        mode: str = "nopython",
+    ) -> Grid:
         r"""Approximates the stationary flux solution.
 
         The solution in obatined using successive relaxation method:
-        1. first, the PDE_matrix is decomposed into its lower tringular component $L$ 
+        1. first, the PDE_matrix is decomposed into its lower tringular component $L$
         and the upper one $-U$
-        2. iterating, from an initial guess,  
-        $$\vec \phi_{n}= L^{-1}U \vec \phi_{n-1}+L^{-1} \vec S,$$ where $\vec S$ is 
+        2. iterating, from an initial guess,
+        $$\vec \phi_{n}= L^{-1}U \vec \phi_{n-1}+L^{-1} \vec S,$$ where $\vec S$ is
         `sources`, we obtain approximations of the solution
         3. a better approxiamtion is reached by weighting $\phi_n'= \phi_n\omega+ (1-\omega)\phi_{n-1}$
         4. when $ \|\phi_{n}-\phi_{n-1}|<$ `conv_criterion` convergence is met.
+
+        Using the paramenter `mode`, different optimization options can be selected. 
+        For more informations about these optimization consult `Reactpy.IntegrationsMethods`.
 
         Parameters
         ----------
         omega : float
             Weight between the previous iteration solution and the solution at the new iteration.
         conv_criterion : float
-            Criterion of convergence: if the norm of two consecuitive solutions (vectors) 
+            Criterion of convergence: if the norm of two consecuitive solutions (vectors)
             is smaller that this parameter convergence is met.
         update : bool
-            If True the attribute `grid` is updated with the solution, otherwise only the 
+            If True the attribute `grid` is updated with the solution, otherwise only the
             retuned Grid object contains the solution.
             (By default this is False).
+        mode : string
+            Determine the integration mode:
+            - "nopython" (default) leaves the integration to `Numba`,
+            - "parallel" parallelize the matrix multiplication with `Numba`,
+            - "Scipy" uses the `Scipy` libraries to mange the matrices as sparse matrices.
 
         Returns
         -------
@@ -389,28 +417,52 @@ class Solver:
             New Grid object containing the solution obtained.
         """
         phi = self.grid.flux_vector()  # Initial conditions
-        L = np.tril(self.PDE_matrix)  # Lower triangular PDE Matrix
-        sources_matrix = matrix_to_vector(self.sources)
-        # WIP
-        for i in range(np.prod(self.grid.size)):
-            if L[i, i] == 0:
-                L[i, i] = 1
-        #
-        U = -1 * np.triu(self.PDE_matrix, 1)  # Upper triangular PDE Matrix times -1
-        L_inv = np.linalg.inv(L)
+        sources_vector = matrix_to_vector(self.sources)
 
-        # Iterations to find the solution
-        # Stops when succesive solutions start to be close (their norm)
-        while True:
-            old_phi = phi.copy()
-            tmp_phi = L_inv.dot(U.dot(phi)) + L_inv.dot(sources_matrix)
-            # Sets empty cell flux to zero
-            for cell_coord in self.grid.empty_cells:
-                tmp_phi[cell_coord[0] + cell_coord[1] * self.grid.size[1]] = 0
-            phi = omega * tmp_phi + (1 - omega) * old_phi
-            # Convergence criterion
-            if np.linalg.norm(tmp_phi - old_phi) < conv_criterion:
-                break
+        if mode == "nopython":
+            phi = nopython_integrate(
+                phi,
+                self.PDE_matrix,
+                sources_vector,
+                omega,
+                conv_criterion,
+                self.grid.empty_cells,
+                self.grid.size,
+            )
+        elif mode == "parallel":
+            phi = paralell_integrate(
+                phi,
+                self.PDE_matrix,
+                sources_vector,
+                omega,
+                conv_criterion,
+                self.grid.empty_cells,
+                self.grid.size,
+            )
+        elif mode == "Scipy":
+            phi = sci_integrate(
+                phi,
+                self.PDE_matrix,
+                sources_vector,
+                omega,
+                conv_criterion,
+                self.grid.empty_cells,
+                self.grid.size,
+            )
+        else:
+            print(
+                mode
+                + "not recognized.\n By default nopython integration will be executed."
+            )
+            phi = nopython_integrate(
+                phi,
+                self.PDE_matrix,
+                sources_vector,
+                omega,
+                conv_criterion,
+                self.grid.empty_cells,
+                self.grid.size,
+            )
 
         # Create the Grid of the solution
         new_grid = deepcopy(self.grid)

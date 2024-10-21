@@ -1,23 +1,12 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import numpy as np
 import Reactpy as rt
+from Reactpy import ControlRods
 from matplotlib.animation import FuncAnimation
 from tqdm import tqdm
 
 # ------Code-----
-
-def time_CR(t: float, delta_t: float, t_max :float, k: float)->float:
-    if t*delta_t < t_max * 0.1:
-        percentage = -10*t/t_max*delta_t +1
-    elif t*delta_t < t_max * 0.2:
-        percentage = 0
-    elif t*delta_t < t_max * 0.3:
-        percentage = (t/t_max*delta_t - 0.2)*k*10
-    elif t*delta_t < t_max * 0.8:
-        percentage = k
-    else:
-        percentage = (1-k)*5*(t/t_max*delta_t - 0.8) + k
-    return percentage
 
 # -----Parameters------
 t_max: float = 10
@@ -62,6 +51,7 @@ for line in input_file:
 Sigma_absorption = np.diag(rt.file_read_as_vector("Sigma_absorption.dat"))
 Sigma_fuel = np.diag(rt.file_read_as_vector("Sigma_fuel.dat"))
 Control_rods = np.diag(rt.file_read_as_vector("Control_rods.dat"))
+Control_rods_matrix = np.array(rt.file_read_as_matrix("Control_rods.dat"))
 
 # Creates enviroment for numerical integration
 reactor = rt.Grid(grid_matrix=rt.file_read_as_matrix("grid.dat"), Delta=Delta)
@@ -75,44 +65,64 @@ PDE = (
 time_PDE_Matrix = PDE + reactor.flux_PDE_matrix() / (v * delta_t)
 
 data = [reactor.flux_matrix()]  # Set of neutron fluxes at different time
+CR_data = ControlRods.linear_cycle_array(delta_t, t_max, .2)
 
 # Initalizes the numerical integrataor
 solver = rt.Solver(
-    reactor, sources=data[0] / (v * delta_t), PDE_matrix=time_PDE_Matrix + Control_rods
+    reactor,
+    sources=data[0] / (v * delta_t),
+    PDE_matrix=time_PDE_Matrix + Control_rods * CR_data[0],
 )
 
 # ---Numerical integration---
 for t in tqdm(range(int(t_max / delta_t))):
-    solver.solve(omega, conv_criterion, update=True)
+    solver.solve(omega, conv_criterion, update=True, mode = "nopython")
     data.append(solver.grid.flux_matrix())
     # The solver sources are updated with the new fluxes to obtain time derivative terms
     solver = rt.Solver(
         reactor,
         sources=solver.grid.flux_matrix() / (v * delta_t),
-        PDE_matrix=time_PDE_Matrix
-        + Control_rods * time_CR(t,delta_t, t_max, 0.2),
+        PDE_matrix=time_PDE_Matrix + Control_rods * CR_data[t]
     )
 
-# -----Plotting and image genetation-----
+# -----Plotting and image generation-----
 data.pop(0)  # Removes the initial condition from the plotte data
 max_flux = np.max(data)
 min_flux = np.min(data)
-fig, ax = plt.subplots()
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+# Neutron flux plot
+pcm1 = ax1.pcolormesh(data[0], cmap="turbo", shading="flat", vmin=min_flux, vmax=max_flux)
+cbar1 = plt.colorbar(pcm1, ax=ax1)
+cbar1.set_label("Neutron flux")
+ax1.set_title("Neutron Flux")
 
-pcm = ax.pcolormesh(data[0], vmin=min_flux, vmax=max_flux, cmap="turbo", shading="flat")
-cbar = plt.colorbar(pcm, ax=ax)
+# COntrol rods plot
+pcm2 = ax2.pcolormesh(Control_rods_matrix * CR_data[0], cmap="Grays", shading="flat", vmin=0, vmax=np.max(Control_rods_matrix), alpha=1)
+cbar2 = plt.colorbar(pcm2, ax=ax2)
+cbar2.set_label("Control Rods absorption")
+ax2.set_title("Control Rods")
 
-
+# Animation update function
 def update(frame):
-    pcm = ax.pcolormesh(
-        data[frame], vmin=min_flux, vmax=max_flux, cmap="turbo", shading="flat"
+    # Neutron flux update
+    pcm1 = ax1.pcolormesh(data[frame], cmap="turbo", shading="flat", vmin=min_flux, vmax=max_flux)
+
+    # Control rods update
+    pcm2 = ax2.pcolormesh(
+        np.ma.masked_where(Control_rods_matrix * CR_data[frame] == 0, Control_rods_matrix * CR_data[frame]),
+        cmap="Grays",
+        vmin=0,
+        vmax=np.max(Control_rods_matrix),
+        alpha=1,
     )
-    ax.set_title("Time(s):" + str(np.round(frame * delta_t, 3)))
-    cbar.update_normal(pcm)
-    return [pcm, cbar]
 
+    # update title
+    ax1.set_title("Neutron Flux - Time(s): " + str(np.round(frame * delta_t, 3)))
+    ax2.set_title("Control Rods - Time(s): " + str(np.round(frame * delta_t, 3)))
 
-fig.subplots_adjust(top=0.9)
+    return [pcm1, pcm2]
+
+fig.subplots_adjust(top=0.9,right=.95, left=0.05)
 
 description = (
     r"$D=$"
@@ -132,15 +142,15 @@ description = (
     + str(conv_criterion)
 )
 fig.text(
-    0.6,
-    0.92,
+    0.80,
+    0.93,
     description,
     fontsize=7,
     bbox=dict(facecolor="white", edgecolor="black", pad=3.0),
 )
 
 ani = FuncAnimation(fig, update, frames=len(data), interval=0.3 / delta_t)
-# ani.save('filename.gif', writer='imagemagick')
+ani.save("filename.gif", writer="imagemagick")
 
 plt.draw()
 plt.show()
