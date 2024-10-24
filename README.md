@@ -29,7 +29,7 @@ $$\frac{1}{v}\frac{\partial \phi}{\partial t}=D\nabla^2\phi-(\Sigma_a+\Sigma_f)\
 
 After the integration the code produces an animation that shows the time evolution of the reactor: e.g.
 
-![Alt Text](https://github.com/MorelliLuca/Neutron-diffusion/blob/master/Output%20examples/filename.gif?raw=true)
+![Alt Text](https://github.com/MorelliLuca/Neutron-diffusion/blob/master/Output%20examples/Example.gif?raw=true)
 
 The code of `CriticalityFudgeFactor.py` instead allows to evaluate the value of $k_{fudge}$ that makes _critical_ the reactor described in the above `.dat` files.
 

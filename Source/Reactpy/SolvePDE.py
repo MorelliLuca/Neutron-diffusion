@@ -1,4 +1,4 @@
-"""This module provvides a set of classes that can be utilized to perform numerical integration of stationary PDEs.
+"""This module provides a set of classes that can be utilized to perform numerical integration of stationary PDEs.
    
 These classes create a discretized configuartion space for the PDE, then using succesive relaxation method, they estimate the 
 stationary solution to the given PDE.
@@ -25,7 +25,7 @@ class Cell:
         Neutron flux in the cell.
     `position` : tuple
         Coordinates of the cell in a grid.
-    `type` : {"Flux", "Empty"}
+    `type` : str={"Flux", "Empty"}
         Type of the cell, e.g. whether it is empty or not.
     """
 
@@ -38,7 +38,7 @@ class Cell:
             Neutron flux of the cell.
         `position` : tuple
             Coordinates of the cell in a grid.
-        `type` : {"Flux", "Empty"}
+        `type` : str={"Flux", "Empty"}
             Type of the cell, e.g. whether it is empty or not.
         """
         self.flux = flux

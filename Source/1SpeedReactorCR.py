@@ -17,7 +17,10 @@ D = 1
 v = 1
 fudge = 1
 Delta = 1
+intergration_mode = "nopython"
+SS_Control_Rods_lvl = 0 #Steady state control rods level
 
+print("Loading parameters from file...")
 input_file = open("Parameters.dat", "r")
 for line in input_file:
     line = line.replace("\n", "")
@@ -39,6 +42,10 @@ for line in input_file:
         fudge = float(parameter[1])
     elif parameter[0] == "Delta":
         Delta = float(parameter[1])
+    elif parameter[0] == "Integration_mode":
+        intergration_mode = str(parameter[1])
+    elif parameter[0] == "Steady_state_Control_rods_level":
+        SS_Control_Rods_lvl = float(parameter[1])
     else:
         print(
             "Unknow parameter inserted "
@@ -48,15 +55,18 @@ for line in input_file:
 
 
 # Spacial depending paramenters aquired from files
+print("Loading parameters with spacial dependece from files...")
 Sigma_absorption = np.diag(rt.file_read_as_vector("Sigma_absorption.dat"))
 Sigma_fuel = np.diag(rt.file_read_as_vector("Sigma_fuel.dat"))
 Control_rods = np.diag(rt.file_read_as_vector("Control_rods.dat"))
 Control_rods_matrix = np.array(rt.file_read_as_matrix("Control_rods.dat"))
 
 # Creates enviroment for numerical integration
+print("Initalizing the integration grid...")
 reactor = rt.Grid(grid_matrix=rt.file_read_as_matrix("grid.dat"), Delta=Delta)
 
 # Generates the matrices that represents the discretized differential operators
+print("Generating PDE matrix...")
 PDE = (
     -D * (reactor.second_Xderivative_matrix() + reactor.second_Yderivative_matrix())
     + Sigma_absorption
@@ -65,7 +75,8 @@ PDE = (
 time_PDE_Matrix = PDE + reactor.flux_PDE_matrix() / (v * delta_t)
 
 data = [reactor.flux_matrix()]  # Set of neutron fluxes at different time
-CR_data = ControlRods.linear_cycle_array(delta_t, t_max, .2)
+print("Generating control rods evolution array...")
+CR_data = ControlRods.linear_cycle_array(delta_t, t_max, SS_Control_Rods_lvl) #Control rods time evolution
 
 # Initalizes the numerical integrataor
 solver = rt.Solver(
@@ -75,8 +86,9 @@ solver = rt.Solver(
 )
 
 # ---Numerical integration---
+print("---------------------\nINTEGRATION:"+intergration_mode)
 for t in tqdm(range(int(t_max / delta_t))):
-    solver.solve(omega, conv_criterion, update=True, mode = "nopython")
+    solver.solve(omega, conv_criterion, update=True, mode = intergration_mode)
     data.append(solver.grid.flux_matrix())
     # The solver sources are updated with the new fluxes to obtain time derivative terms
     solver = rt.Solver(
@@ -96,7 +108,7 @@ cbar1 = plt.colorbar(pcm1, ax=ax1)
 cbar1.set_label("Neutron flux")
 ax1.set_title("Neutron Flux")
 
-# COntrol rods plot
+# Control rods plot
 pcm2 = ax2.pcolormesh(Control_rods_matrix * CR_data[0], cmap="Grays", shading="flat", vmin=0, vmax=np.max(Control_rods_matrix), alpha=1)
 cbar2 = plt.colorbar(pcm2, ax=ax2)
 cbar2.set_label("Control Rods absorption")
@@ -109,7 +121,7 @@ def update(frame):
 
     # Control rods update
     pcm2 = ax2.pcolormesh(
-        np.ma.masked_where(Control_rods_matrix * CR_data[frame] == 0, Control_rods_matrix * CR_data[frame]),
+        Control_rods_matrix * CR_data[frame],
         cmap="Grays",
         vmin=0,
         vmax=np.max(Control_rods_matrix),

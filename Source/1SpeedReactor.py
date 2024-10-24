@@ -15,7 +15,9 @@ D = 1
 v = 1
 fudge = 1
 Delta = 1
+intergration_mode = "nopython"
 
+print("Loading parameters from file...")
 input_file = open("Parameters.dat", "r")
 for line in input_file:
     line = line.replace("\n", "")
@@ -37,6 +39,10 @@ for line in input_file:
         fudge = float(parameter[1])
     elif parameter[0] == "Delta":
         Delta = float(parameter[1])
+    elif parameter[0] == "Integration_mode":
+        intergration_mode = str(parameter[1])
+    elif parameter[0] == "Steady_state_Control_rods_level":
+        continue
     else:
         print(
             "Unknow parameter inserted "
@@ -46,13 +52,16 @@ for line in input_file:
 
 
 # Spacial depending paramenters aquired from files
+print("Loading parameters with spacial dependece from files...")
 Sigma_absorption = np.diag(rt.file_read_as_vector("Sigma_absorption.dat"))
 Sigma_fuel = np.diag(rt.file_read_as_vector("Sigma_fuel.dat"))
 
 # Creates enviroment for numerical integration
+print("Initalizing the integration grid...")
 reactor = rt.Grid(grid_matrix=rt.file_read_as_matrix("grid.dat"), Delta=Delta)
 
 # Generates the matrices that represents the discretized differential operators
+print("Generating PDE matrix...")
 PDE = (
     -D * (reactor.second_Xderivative_matrix() + reactor.second_Yderivative_matrix())
     + Sigma_absorption
@@ -66,8 +75,9 @@ data = [reactor.flux_matrix()]  # Set of neutron fluxes at different time
 solver = rt.Solver(reactor, sources=data[0] / (v * delta_t), PDE_matrix=time_PDE_Matrix)
 
 # ---Numerical integration---
+print("---------------------\nINTEGRATION:"+intergration_mode)
 for t in tqdm(range(int(t_max / delta_t))):
-    solver.solve(omega, conv_criterion, update=True)
+    solver.solve(omega, conv_criterion, update=True, mode=intergration_mode)
     data.append(solver.grid.flux_matrix())
     # The solver sources are updated with the new fluxes to obtain time derivative terms
     solver.sources = solver.grid.flux_matrix() / (v * delta_t)

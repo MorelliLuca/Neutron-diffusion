@@ -13,7 +13,10 @@ D = 1
 v = 1
 fudge = 1
 Delta = 1
+intergration_mode = "nopython"
+SS_Control_Rods_lvl = 0  #Control rods level at steady state operation
 
+print("Loading parameters from file...")
 input_file = open("Parameters.dat", "r")
 for line in input_file:
     line = line.replace("\n", "")
@@ -35,6 +38,10 @@ for line in input_file:
         fudge = float(parameter[1])
     elif parameter[0] == "Delta":
         Delta = float(parameter[1])
+    elif parameter[0] == "Integration_mode":
+        intergration_mode = str(parameter[1])
+    elif parameter[0] == "Steady_state_Control_rods_level":
+        SS_Control_Rods_lvl = float(parameter[1])
     else:
         print(
             "Unknow parameter inserted "
@@ -43,18 +50,21 @@ for line in input_file:
         )
 
 # Spacial depending paramenters aquired from files
+print("Loading parameters with spacial dependece from files...")
 Sigma_absorption = np.diag(rt.file_read_as_vector("Sigma_absorption.dat"))
 Sigma_fuel = np.diag(rt.file_read_as_vector("Sigma_fuel.dat"))
 Control_rods = np.diag(rt.file_read_as_vector("Control_rods.dat"))
 
 # Creates enviroment for numerical integration
+print("Initalizing the integration grid...")
 reactor = rt.Grid(rt.file_read_as_matrix("grid.dat"), Delta=Delta)  # change to reactor
 
 # Generates the matrices that represents the discretized differential operators
+print("Generating PDE matrix...")
 PDE = (
     -D * (reactor.second_Xderivative_matrix() + reactor.second_Yderivative_matrix())
     + Sigma_absorption
-    + Control_rods * 0.20
+    + Control_rods * SS_Control_Rods_lvl
 )
 # Initalizes the numerical integrataor
 solver = rt.Solver(
@@ -66,8 +76,10 @@ solver = rt.Solver(
 )
 
 # ---Numerical integration---
-while True:
-    new_grid = solver.solve(omega, conv_criterion, False)
+print("---------------------\nINTEGRATION:"+intergration_mode)
+not_converged = True
+while not_converged:
+    new_grid = solver.solve(omega, conv_criterion, False, intergration_mode)
     # Update fudge with stationary solution
     fudge *= np.sum(np.dot(Sigma_fuel, new_grid.flux_vector())) / (
         np.sum(np.dot(Sigma_fuel, solver.grid.flux_vector()))
@@ -76,7 +88,7 @@ while True:
         np.linalg.norm(new_grid.flux_vector() - solver.grid.flux_vector())
         < conv_criterion
     ):
-        break
+        not_converged = False
     # Temporarily disabled for performace
     # PDE = -D * (new_grid.second_Xderivative_matrix() + new_grid.second_Yderivative_matrix()) + Sigma_absorption
 
@@ -89,7 +101,7 @@ while True:
         PDE_matrix=PDE,
     )
 
-print(fudge)
+print("---------------------\nThe k_fudge needed to reach criticality is:"+str(fudge))
 
 # -----Plotting and image genetation-----
 fig, ax = plt.subplots()

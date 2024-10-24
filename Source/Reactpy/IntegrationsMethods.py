@@ -1,7 +1,10 @@
 """This module provides alternative ways to integrate PDE equation usign different
    types of optimizations, from `Numba` and `Scipy`.
 
-   For performance it is best to use `nopython_integrate`.
+   For performance it is best to use `nopython_integrate` for smaller grids, while `sci_integrate` becomes
+   significantly faster for bigger grids (almost 2x on a 50x50 grid).
+
+   Please, do not use `parallel_integration` since it was just a sort of experiment and it is by far the slowest.
 
    Functions:
    ----------
@@ -9,12 +12,11 @@
    - `nopython_integrate`: implement numerical integration of a given PDE by compiling the fucntion in Numba _nopython_ mode,
    - `paralell_integrate`: utilizing `parallel_dot`, integrate a given PDE in `nopython` mode and with parallel matrix multiplication.
    - `sci_integrate`: exploits Scipy linear algebra methods for sparce matrices.
-
     """
 import numpy as np
 import numba as nb
 from numba import jit
-from scipy.sparse import csc_matrix
+import scipy.sparse as sp
 from scipy.sparse.linalg import inv as sparse_inv
 
 @jit(nopython=True, parallel=True)
@@ -29,7 +31,7 @@ def parallel_dot(matrix: np.ndarray, vector: np.ndarray):
     `matrix` : np.ndarray
         2D array, which the first factor of the product.
     vector : _type_
-        1D array, which the second factor of the product.
+        1D array, which is the second factor of the product.
 
     Returns
     -------
@@ -205,7 +207,7 @@ def sci_integrate(
     3. a better approxiamtion is reached by weighting $\phi_n'= \phi_n\omega+ (1-\omega)\phi_{n-1}$
     4. when $ \|\phi_{n}-\phi_{n-1}|<$ `conv_criterion` convergence is met.
 
-    Overall, this tested to be the best integration method performace-wise.
+    For larger matrixes this implementation can be faster than `nopython_integrate`.
 
     Parameters
     ----------
@@ -233,9 +235,9 @@ def sci_integrate(
     for i in nb.prange(np.prod(grid_size)):
         if tmp_PDE_matrix[i, i] == 0:
             tmp_PDE_matrix[i, i] = 1
-    PDE_matrix = csc_matrix(tmp_PDE_matrix)
-    L = np.tril(PDE_matrix)  # Lower triangular PDE Matrix
-    U = -1 * np.triu(PDE_matrix, 1)  # Upper triangular PDE Matrix times -1
+    PDE_matrix = sp.csc_matrix(tmp_PDE_matrix)
+    L = sp.tril(PDE_matrix, format='csc')  # Lower triangular PDE Matrix
+    U = -1 * sp.triu(PDE_matrix, 1, format='csc')  # Upper triangular PDE Matrix times -1
     L_inv = sparse_inv(L)
     # Iterations to find the solution
     # Stops when succesive solutions start to be close (their norm)
