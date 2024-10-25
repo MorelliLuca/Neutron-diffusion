@@ -18,7 +18,7 @@ v = 1
 fudge = 1
 Delta = 1
 intergration_mode = "nopython"
-SS_Control_Rods_lvl = 0 #Steady state control rods level
+SS_Control_Rods_lvl = 0  # Steady state control rods level
 
 print("Loading parameters from file...")
 input_file = open("Parameters.dat", "r")
@@ -76,7 +76,9 @@ time_PDE_Matrix = PDE + reactor.flux_PDE_matrix() / (v * delta_t)
 
 data = [reactor.flux_matrix()]  # Set of neutron fluxes at different time
 print("Generating control rods evolution array...")
-CR_data = ControlRods.linear_cycle_array(delta_t, t_max, SS_Control_Rods_lvl) #Control rods time evolution
+CR_data = ControlRods.linear_cycle_array(
+    delta_t, t_max, SS_Control_Rods_lvl
+)  # Control rods time evolution
 
 # Initalizes the numerical integrataor
 solver = rt.Solver(
@@ -86,15 +88,15 @@ solver = rt.Solver(
 )
 
 # ---Numerical integration---
-print("---------------------\nINTEGRATION:"+intergration_mode)
+print("---------------------\nINTEGRATION:" + intergration_mode)
 for t in tqdm(range(int(t_max / delta_t))):
-    solver.solve(omega, conv_criterion, update=True, mode = intergration_mode)
+    solver.solve(omega, conv_criterion, update=True, mode=intergration_mode)
     data.append(solver.grid.flux_matrix())
     # The solver sources are updated with the new fluxes to obtain time derivative terms
     solver = rt.Solver(
         reactor,
         sources=solver.grid.flux_matrix() / (v * delta_t),
-        PDE_matrix=time_PDE_Matrix + Control_rods * CR_data[t]
+        PDE_matrix=time_PDE_Matrix + Control_rods * CR_data[t],
     )
 
 # -----Plotting and image generation-----
@@ -103,21 +105,33 @@ max_flux = np.max(data)
 min_flux = np.min(data)
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 # Neutron flux plot
-pcm1 = ax1.pcolormesh(data[0], cmap="turbo", shading="flat", vmin=min_flux, vmax=max_flux)
+pcm1 = ax1.pcolormesh(
+    data[0], cmap="turbo", shading="flat", vmin=min_flux, vmax=max_flux
+)
 cbar1 = plt.colorbar(pcm1, ax=ax1)
 cbar1.set_label("Neutron flux")
 ax1.set_title("Neutron Flux")
 
 # Control rods plot
-pcm2 = ax2.pcolormesh(Control_rods_matrix * CR_data[0], cmap="Grays", shading="flat", vmin=0, vmax=np.max(Control_rods_matrix), alpha=1)
+pcm2 = ax2.pcolormesh(
+    Control_rods_matrix * CR_data[0],
+    cmap="Grays",
+    shading="flat",
+    vmin=0,
+    vmax=np.max(Control_rods_matrix),
+    alpha=1,
+)
 cbar2 = plt.colorbar(pcm2, ax=ax2)
 cbar2.set_label("Control Rods absorption")
 ax2.set_title("Control Rods")
 
+
 # Animation update function
 def update(frame):
     # Neutron flux update
-    pcm1 = ax1.pcolormesh(data[frame], cmap="turbo", shading="flat", vmin=min_flux, vmax=max_flux)
+    pcm1 = ax1.pcolormesh(
+        data[frame], cmap="turbo", shading="flat", vmin=min_flux, vmax=max_flux
+    )
 
     # Control rods update
     pcm2 = ax2.pcolormesh(
@@ -134,7 +148,8 @@ def update(frame):
 
     return [pcm1, pcm2]
 
-fig.subplots_adjust(top=0.9,right=.95, left=0.05)
+
+fig.subplots_adjust(top=0.9, right=0.95, left=0.05)
 
 description = (
     r"$D=$"

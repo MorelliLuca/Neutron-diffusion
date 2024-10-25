@@ -9,11 +9,13 @@ r"""This module provvides some functions that can generate the time evolution of
     - `shutdown`: returns value of of control bars at given time: it is simualted a scenario in which all control rods
     are fully inserted instanenusely.
     """
+
 import numpy as np
+
 
 def linear_cycle(t: float, delta_t: float, t_max: float, ss_lvl: float) -> float:
     r"""Reproduces the percentage of insertion of control rods at a given time `t`.
-    The full time evolution is splitted in $5$ time periods in which the values returned 
+    The full time evolution is splitted in $5$ time periods in which the values returned
     changes linearly or stay constant:
     - for `t` * `delta_t` < 10% `t_max`}  the the level of the rods is lowered from $100\%$ to $0\%$,
     - for 10% `t_max` < `t` * `delta_t` < 20% `t_max` all the rods are extracted $(0\%)$,
@@ -28,7 +30,7 @@ def linear_cycle(t: float, delta_t: float, t_max: float, ss_lvl: float) -> float
     `delta_t` : float
         Time step between iterations.
     `t_max` : float
-        time duration of the cycle. (This is actual time in seconds) 
+        time duration of the cycle. (This is actual time in seconds)
     `ss_lvl` : float
         Insertion level kept during steady state operation of the reactor.
 
@@ -52,7 +54,7 @@ def linear_cycle(t: float, delta_t: float, t_max: float, ss_lvl: float) -> float
 
 def shutdown(t: float, delta_t: float, t_max: float, ss_lvl: float) -> float:
     """Reproduces the percentage of insertion of control rods at a given time `t`.
-    The full time evolution is splitted in $2$ time periods in which the values returned 
+    The full time evolution is splitted in $2$ time periods in which the values returned
     changes linearly or stay constant:
     - for the first half of `t_max` all the rods are inserted for percentage `ss_lvl`,
     - all the control rods are immediately fully inserted.
@@ -64,7 +66,7 @@ def shutdown(t: float, delta_t: float, t_max: float, ss_lvl: float) -> float:
     `delta_t` : float
         Time step between iterations.
     `t_max` : float
-        time duration of the cycle. (This is actual time in seconds) 
+        time duration of the cycle. (This is actual time in seconds)
     `ss_lvl` : float
         Insertion level kept during steady state operation of the reactor.
 
@@ -79,17 +81,18 @@ def shutdown(t: float, delta_t: float, t_max: float, ss_lvl: float) -> float:
         percentage = 1
     return percentage
 
+
 def linear_cycle_array(delta_t: float, t_max: float, ss_lvl: float) -> np.ndarray:
     """
     Returns an array containing the values, at different iterations steps, of the intertion level of the control rods,
-     following the `linear_cycle` scheme. 
+     following the `linear_cycle` scheme.
 
     Parameters
     ----------
     `delta_t` : float
         Time step between iterations.
     `t_max` : float
-        time duration of the cycle. (This is actual time in seconds) 
+        time duration of the cycle. (This is actual time in seconds)
     `ss_lvl` : float
         Insertion level kept during steady state operation of the reactor.
 
@@ -97,13 +100,14 @@ def linear_cycle_array(delta_t: float, t_max: float, ss_lvl: float) -> np.ndarra
     Returns
     -------
     np.ndarray
-        Array containg squential values over time of the insterion level of the control rods. 
+        Array containg squential values over time of the insterion level of the control rods.
     """
-    array = np.zeros(int(t_max/delta_t), dtype=np.float64)
-    for t in range(int(t_max/delta_t)):
-        array[t] = linear_cycle(t,delta_t,t_max,ss_lvl)
+    array = np.zeros(int(t_max / delta_t), dtype=np.float64)
+    for t in range(int(t_max / delta_t)):
+        array[t] = linear_cycle(t, delta_t, t_max, ss_lvl)
     return array
-        
+
+
 def shutdown_array(delta_t: float, t_max: float, ss_lvl: float) -> np.ndarray:
     """
     Returns an array containing the values, at different iterations steps, of the intertion level of the control rods,
@@ -114,7 +118,7 @@ def shutdown_array(delta_t: float, t_max: float, ss_lvl: float) -> np.ndarray:
     `delta_t` : float
         Time step between iterations.
     `t_max` : float
-        time duration of the cycle. (This is actual time in seconds) 
+        time duration of the cycle. (This is actual time in seconds)
     `ss_lvl` : float
         Insertion level kept during steady state operation of the reactor.
 
@@ -122,10 +126,9 @@ def shutdown_array(delta_t: float, t_max: float, ss_lvl: float) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        Array containg squential values over time of the insterion level of the control rods. 
+        Array containg squential values over time of the insterion level of the control rods.
     """
-    array = np.zeros(int(t_max/delta_t), dtype=np.float64)
-    for t in range(int(t_max/delta_t)):
-        array[t] = shutdown(t,delta_t,t_max,ss_lvl)
+    array = np.zeros(int(t_max / delta_t), dtype=np.float64)
+    for t in range(int(t_max / delta_t)):
+        array[t] = shutdown(t, delta_t, t_max, ss_lvl)
     return array
-        

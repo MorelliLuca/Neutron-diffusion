@@ -13,11 +13,13 @@
    - `paralell_integrate`: utilizing `parallel_dot`, integrate a given PDE in `nopython` mode and with parallel matrix multiplication.
    - `sci_integrate`: exploits Scipy linear algebra methods for sparce matrices.
     """
+
 import numpy as np
 import numba as nb
 from numba import jit
 import scipy.sparse as sp
 from scipy.sparse.linalg import inv as sparse_inv
+
 
 @jit(nopython=True, parallel=True)
 def parallel_dot(matrix: np.ndarray, vector: np.ndarray):
@@ -41,8 +43,8 @@ def parallel_dot(matrix: np.ndarray, vector: np.ndarray):
     assert matrix.shape[1] == vector.shape[0]
     result = np.zeros(matrix.shape[0], dtype=matrix.dtype)
     for i in nb.prange(matrix.shape[0]):
-            for j in nb.prange(matrix.shape[1]):
-                result[i] += matrix[i, j] * vector[j]
+        for j in nb.prange(matrix.shape[1]):
+            result[i] += matrix[i, j] * vector[j]
     return result
 
 
@@ -54,9 +56,9 @@ def nopython_integrate(
     omega: float,
     conv_criterion: float,
     empty_cells: np.ndarray,
-    grid_size:np.ndarray
-)-> np.ndarray :
-    r"""Performs numerical integration of a given statuonary PDE using Numba _nopython_ compliation, for better performances. 
+    grid_size: np.ndarray,
+) -> np.ndarray:
+    r"""Performs numerical integration of a given statuonary PDE using Numba _nopython_ compliation, for better performances.
 
     The solution in obatined using successive relaxation method:
     1. first, the PDE_matrix is decomposed into its lower tringular component $L$
@@ -125,9 +127,9 @@ def paralell_integrate(
     conv_criterion: float,
     empty_cells: np.ndarray,
     grid_size: np.ndarray,
-)-> np.ndarray:
-    r"""Performs numerical integration of a given statuonary PDE using Numba _nopython_ compliation 
-    and parallelization of matrix multiplications, for better performances. 
+) -> np.ndarray:
+    r"""Performs numerical integration of a given statuonary PDE using Numba _nopython_ compliation
+    and parallelization of matrix multiplications, for better performances.
 
     The solution in obatined using successive relaxation method:
     1. first, the PDE_matrix is decomposed into its lower tringular component $L$
@@ -195,8 +197,8 @@ def sci_integrate(
     conv_criterion: float,
     empty_cells: np.ndarray,
     grid_size: np.ndarray,
-)->np.ndarray:
-    r"""Performs numerical integration of a given statuonary PDE using Scipy sparce matrix methods, for better performances. 
+) -> np.ndarray:
+    r"""Performs numerical integration of a given statuonary PDE using Scipy sparce matrix methods, for better performances.
 
     The solution in obatined using successive relaxation method:
     1. first, the PDE_matrix is decomposed into its lower tringular component $L$
@@ -236,8 +238,10 @@ def sci_integrate(
         if tmp_PDE_matrix[i, i] == 0:
             tmp_PDE_matrix[i, i] = 1
     PDE_matrix = sp.csc_matrix(tmp_PDE_matrix)
-    L = sp.tril(PDE_matrix, format='csc')  # Lower triangular PDE Matrix
-    U = -1 * sp.triu(PDE_matrix, 1, format='csc')  # Upper triangular PDE Matrix times -1
+    L = sp.tril(PDE_matrix, format="csc")  # Lower triangular PDE Matrix
+    U = -1 * sp.triu(
+        PDE_matrix, 1, format="csc"
+    )  # Upper triangular PDE Matrix times -1
     L_inv = sparse_inv(L)
     # Iterations to find the solution
     # Stops when succesive solutions start to be close (their norm)

@@ -14,7 +14,7 @@ v = 1
 fudge = 1
 Delta = 1
 intergration_mode = "nopython"
-SS_Control_Rods_lvl = 0  #Control rods level at steady state operation
+SS_Control_Rods_lvl = 0  # Control rods level at steady state operation
 
 print("Loading parameters from file...")
 input_file = open("Parameters.dat", "r")
@@ -76,7 +76,7 @@ solver = rt.Solver(
 )
 
 # ---Numerical integration---
-print("---------------------\nINTEGRATION:"+intergration_mode)
+print("---------------------\nINTEGRATION:" + intergration_mode)
 not_converged = True
 while not_converged:
     new_grid = solver.solve(omega, conv_criterion, False, intergration_mode)
@@ -101,7 +101,7 @@ while not_converged:
         PDE_matrix=PDE,
     )
 
-print("---------------------\nThe k_fudge needed to reach criticality is:"+str(fudge))
+print("---------------------\nThe k_fudge needed to reach criticality is:" + str(fudge))
 
 # -----Plotting and image genetation-----
 fig, ax = plt.subplots()

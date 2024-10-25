@@ -7,6 +7,7 @@ The class `Cell` represent the single spacial element of the discretization, con
 then the `Grid` class groups toghether all the `Cell` istances and gives to the user the methods needed to represent the discretized PDE.
 Lastly, the class `Solver` manages the integration of the PDE.
 """
+
 import numpy as np
 from copy import deepcopy
 from .Functions import *
@@ -391,7 +392,7 @@ class Solver:
         3. a better approxiamtion is reached by weighting $\phi_n'= \phi_n\omega+ (1-\omega)\phi_{n-1}$
         4. when $ \|\phi_{n}-\phi_{n-1}|<$ `conv_criterion` convergence is met.
 
-        Using the paramenter `mode`, different optimization options can be selected. 
+        Using the paramenter `mode`, different optimization options can be selected.
         For more informations about these optimization consult `Reactpy.IntegrationsMethods`.
 
         Parameters

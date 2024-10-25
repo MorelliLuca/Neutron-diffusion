@@ -1,8 +1,10 @@
 import numpy as np
+
 """This module provides some recurring functions used by the other modules, but that can be useful also 
     for the user. Mainly, these functions allows to read data from files and convert it directly in Numpy 
     arrays or to to perform conversion between vectorial and matricial representation of data.
     """
+
 
 def vector_to_matrix(vector: np.ndarray, size: tuple) -> np.ndarray:
     """

@@ -75,7 +75,7 @@ data = [reactor.flux_matrix()]  # Set of neutron fluxes at different time
 solver = rt.Solver(reactor, sources=data[0] / (v * delta_t), PDE_matrix=time_PDE_Matrix)
 
 # ---Numerical integration---
-print("---------------------\nINTEGRATION:"+intergration_mode)
+print("---------------------\nINTEGRATION:" + intergration_mode)
 for t in tqdm(range(int(t_max / delta_t))):
     solver.solve(omega, conv_criterion, update=True, mode=intergration_mode)
     data.append(solver.grid.flux_matrix())
