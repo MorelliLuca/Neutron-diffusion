@@ -25,7 +25,7 @@ To use this code it is necessary to first input the data that describes the reac
 
 The code of `1SpeedReactor.py` and of `1SpeedReactor.py` then allow to numerically integrate the following equation:
 
-$$\frac{1}{v}\frac{\partial \phi}{\partial t}=D\nabla^2\phi-(\Sigma_a+\Sigma_f)\phi+v\frac{\Sigma_f}{k_{fudge}}\phi.\$$
+$$\frac{1}{v}\frac{\partial \phi}{\partial t}=D\nabla^2\phi-\Sigma_a\phi+v\frac{\Sigma_f}{k_{fudge}}\phi.\$$
 
 After the integration the code produces an animation that shows the time evolution of the reactor: e.g.
 
